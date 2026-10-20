@@ -8,19 +8,27 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   min-height: 100vh;
-  background: linear-gradient(160deg, #0f0a1a, #1a0a2e);
+  background: linear-gradient(160deg, #0f0a1a, #1a0a2e, #2d1b4e);
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
 }
 .card {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 20px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
   padding: 30px;
   width: 100%; max-width: 380px;
   text-align: center;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 h1 { font-size: 22px; margin-bottom: 20px; }
 .search { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -35,14 +43,37 @@ h1 { font-size: 22px; margin-bottom: 20px; }
   padding: 12px 18px; border: none; border-radius: 12px;
   background: linear-gradient(135deg, #8b5cf6, #ec4899);
   color: #fff; font-weight: 600; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-.weather { display: none; }
+.search button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+}
+.weather { display: none; animation: slideUp 0.4s ease; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .weather.show { display: block; }
-.temp { font-size: 64px; font-weight: 300; margin: 10px 0; }
+.temp {
+  font-size: 64px; font-weight: 300; margin: 10px 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
 .city { font-size: 20px; margin-bottom: 6px; }
 .desc { color: rgba(255,255,255,0.6); margin-bottom: 20px; }
 .details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-.detail { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; }
+.detail {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 14px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s;
+}
+.detail:hover { transform: translateY(-2px); }
 .detail span { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
 .detail strong { font-size: 18px; }
 .icon { font-size: 60px; margin: 10px 0; }
@@ -93,7 +124,8 @@ async function getWeather(){
     var data = await weather.json();
     var c = data.current;
     document.getElementById('temp').textContent = Math.round(c.temperature_2m) + '°';
-    document.getElementById('cityName').textContent = name + ', ' + country;
+   var state = geoData.results[0].admin1 || '';
+document.getElementById('cityName').textContent = name + (state ? ', ' + state : '') + ', ' + country;
     document.getElementById('desc').textContent = getDesc(c.weather_code);
     document.getElementById('icon').textContent = getIcon(c.weather_code);
     document.getElementById('humidity').textContent = c.relative_humidity_2m + '%';
