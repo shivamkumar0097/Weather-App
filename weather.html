@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather - Shivam</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0f0a1a, #1a0a2e);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 30px;
+  width: 100%; max-width: 380px;
+  text-align: center;
+}
+h1 { font-size: 22px; margin-bottom: 20px; }
+.search { display: flex; gap: 8px; margin-bottom: 20px; }
+.search input {
+  flex: 1; padding: 12px 16px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08); color: #fff;
+  font-size: 15px; outline: none;
+}
+.search input::placeholder { color: rgba(255,255,255,0.4); }
+.search button {
+  padding: 12px 18px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: #fff; font-weight: 600; cursor: pointer;
+}
+.weather { display: none; }
+.weather.show { display: block; }
+.temp { font-size: 64px; font-weight: 300; margin: 10px 0; }
+.city { font-size: 20px; margin-bottom: 6px; }
+.desc { color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+.details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.detail { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; }
+.detail span { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+.detail strong { font-size: 18px; }
+.icon { font-size: 60px; margin: 10px 0; }
+.error { color: #f87171; margin-top: 10px; display: none; }
+footer { margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Weather</h1>
+  <div class="search">
+    <input type="text" id="city" placeholder="Enter city..." onkeypress="if(event.key==='Enter')getWeather()">
+    <button onclick="getWeather()">Search</button>
+  </div>
+  <div class="error" id="error">City not found</div>
+  <div class="weather" id="weather">
+    <div class="icon" id="icon">🌤️</div>
+    <div class="temp" id="temp">--°</div>
+    <div class="city" id="cityName">--</div>
+    <div class="desc" id="desc">--</div>
+    <div class="details">
+      <div class="detail"><span>Humidity</span><strong id="humidity">--%</strong></div>
+      <div class="detail"><span>Wind</span><strong id="wind">-- km/h</strong></div>
+      <div class="detail"><span>Feels Like</span><strong id="feels">--°</strong></div>
+      <div class="detail"><span>Pressure</span><strong id="pressure">-- hPa</strong></div>
+    </div>
+  </div>
+  <footer>Made by Shivam</footer>
+</div>
+<script>
+async function getWeather(){
+  var city = document.getElementById('city').value.trim();
+  if(!city) return;
+  document.getElementById('error').style.display = 'none';
+  try {
+    var geo = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(city) + '&count=1');
+    var geoData = await geo.json();
+    if(!geoData.results || !geoData.results.length){
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('weather').classList.remove('show');
+      return;
+    }
+    var lat = geoData.results[0].latitude;
+    var lon = geoData.results[0].longitude;
+    var name = geoData.results[0].name;
+    var country = geoData.results[0].country;
+    var weather = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,pressure_msl');
+    var data = await weather.json();
+    var c = data.current;
+    document.getElementById('temp').textContent = Math.round(c.temperature_2m) + '°';
+    document.getElementById('cityName').textContent = name + ', ' + country;
+    document.getElementById('desc').textContent = getDesc(c.weather_code);
+    document.getElementById('icon').textContent = getIcon(c.weather_code);
+    document.getElementById('humidity').textContent = c.relative_humidity_2m + '%';
+    document.getElementById('wind').textContent = Math.round(c.wind_speed_10m) + ' km/h';
+    document.getElementById('feels').textContent = Math.round(c.apparent_temperature) + '°';
+    document.getElementById('pressure').textContent = Math.round(c.pressure_msl) + ' hPa';
+    document.getElementById('weather').classList.add('show');
+  } catch(e) {
+    document.getElementById('error').style.display = 'block';
+  }
+}
+function getDesc(code){
+  if(code === 0) return 'Clear sky';
+  if(code <= 3) return 'Partly cloudy';
+  if(code <= 48) return 'Foggy';
+  if(code <= 57) return 'Drizzle';
+  if(code <= 67) return 'Rain';
+  if(code <= 77) return 'Snow';
+  if(code <= 82) return 'Rain showers';
+  return 'Thunderstorm';
+}
+function getIcon(code){
+  if(code === 0) return '☀️';
+  if(code <= 3) return '⛅';
+  if(code <= 48) return '🌫️';
+  if(code <= 67) return '🌧️';
+  if(code <= 77) return '❄️';
+  if(code <= 82) return '🌦️';
+  return '⛈️';
+}
+</script>
+</body>
+</html>
